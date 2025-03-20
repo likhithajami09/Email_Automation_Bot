@@ -52,7 +52,6 @@ def attach_file(msg, file_path):
             msg.attach(part)
 
 
-
 class EmailAutomationTool:
     def __init__(self):
         # Load environment variables if present
@@ -129,13 +128,13 @@ class EmailAutomationTool:
                 os.makedirs(attachment_dir, exist_ok=True)
                 for idx, row in df[missing_attachments].iterrows():
                     pin = str(row["pin"])
-                    correct_file_name = f"{pin}.{selected_file_type}"  # ✅ Ensure correct extension
+                    correct_file_name = f"{pin}.{selected_file_type}"  # Ensure correct extension
                     file_path = os.path.join(attachment_dir, correct_file_name)
 
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
 
-                    df.at[idx, "Attachment"] = file_path  # ✅ Correctly update path
+                    df.at[idx, "Attachment"] = file_path  # Correctly update path
 
         return df
 
@@ -172,7 +171,7 @@ class EmailAutomationTool:
 
         pin_column = next((col for col in df.columns if 'pin' in col.lower()), None)
 
-        # ✅ Debug: Check if the PIN column exists
+        # Debug: Check if the PIN column exists
         print("Columns in DataFrame:", df.columns)
         print("Detected PIN column:", pin_column)
 
@@ -180,7 +179,7 @@ class EmailAutomationTool:
             st.error("No PIN column found in the data. Column name should contain 'pin'.")
             return df
 
-        # ✅ Debug: Print sample PIN values before mapping
+        # Debug: Print sample PIN values before mapping
         print("Sample PIN values:", df[pin_column].astype(str).head())  
 
         # Ensure 'Attachment' column exists
@@ -198,9 +197,9 @@ class EmailAutomationTool:
                 if os.path.exists(filepath):
                     df.at[idx, 'Attachment'] = str(filepath)  # Save the filepath
                 else:
-                    print(f"File NOT FOUND: {filename} at {filepath}")  # ✅ Debug file existence
+                    print(f"File NOT FOUND: {filename} at {filepath}")  # Debug file existence
 
-        # ✅ Debug: Print DataFrame after attachment mapping
+        # Debug: Print DataFrame after attachment mapping
         print("DataFrame After Mapping Attachments:")
         print(df[[pin_column, "Attachment"]].head())  
 
@@ -235,9 +234,6 @@ class EmailAutomationTool:
                     df.at[idx, "Attachment"] = None  # Avoid assigning wrong paths
 
         return df
-
-
-
 
     def validate_email(self, email):
         """Validate email address format"""
@@ -287,21 +283,21 @@ class EmailAutomationTool:
         except Exception as e:
             st.error(f"Error parsing schedule time: {e}")
             return None
+
     def schedule_email(self, email_sender, password, recipients, subject, body, schedule_datetime, attachment=None, recurring=False, recurring_days=None):
         """Schedule an email for future sending"""
         # Prepare email details for scheduling
-        # ✅ Ensure attachment paths are saved properly  
         if isinstance(attachment, st.runtime.uploaded_file_manager.UploadedFile):  
             save_dir = "saved_attachments"  
-            os.makedirs(save_dir, exist_ok=True)  # ✅ Ensure folder exists  
+            os.makedirs(save_dir, exist_ok=True)  # Ensure folder exists  
             saved_path = os.path.join(save_dir, attachment.name)  
 
             with open(saved_path, "wb") as f:  
-                f.write(attachment.getbuffer())  # ✅ Save the uploaded file  
+                f.write(attachment.getbuffer())  # Save the uploaded file  
 
-            attachment = saved_path  # ✅ Store the saved path  
+            attachment = saved_path  # Store the saved path  
 
-        # ✅ Store the correct attachment path  
+        # Store the correct attachment path  
         email_details = {  
             'sender': email_sender,  
             'password': password,  
@@ -309,7 +305,7 @@ class EmailAutomationTool:
             'subject': subject,  
             'body': body,  
             'schedule_time': schedule_datetime,  
-            'attachment': attachment,  # ✅ Save the file path instead of UploadedFile  
+            'attachment': attachment,  # Save the file path instead of UploadedFile  
             'scheduled_at': datetime.now(self.LOCAL_TIMEZONE),  
             'sent': False,  
             'recurring': recurring,  
@@ -317,7 +313,6 @@ class EmailAutomationTool:
             'id': len(st.session_state.scheduled_emails) + 1  
         }  
 
-        
         # Add to scheduled emails in session state
         st.session_state.scheduled_emails.append(email_details)
         # Update local copy for thread safety
@@ -400,13 +395,13 @@ class EmailAutomationTool:
             try:
                 self.logger.info(f"Sending email scheduled for {email['schedule_time']} at {now}")
 
-                # ✅ Ensure we correctly retrieve the saved attachment path  
+                # Ensure we correctly retrieve the saved attachment path  
                 attachment = email.get("attachment", "")  
 
-                # ✅ Debug print  
+                # Debug print  
                 if attachment and not os.path.exists(attachment):  
                     print(f"⚠️ Scheduled attachment file not found: {attachment}")  
-                    attachment = None  # ✅ Prevent broken attachment paths  
+                    attachment = None  # Prevent broken attachment paths  
 
                 self.send_bulk_emails(
                     email['sender'],
@@ -414,9 +409,8 @@ class EmailAutomationTool:
                     email['recipients'],
                     email['subject'],
                     email['body'],
-                    attachment  # ✅ Use the corrected attachment path
+                    attachment  # Use the corrected attachment path
                 )
-
 
                 # Mark email as sent in local copy
                 email['sent'] = True
@@ -434,7 +428,6 @@ class EmailAutomationTool:
                 self.logger.error(f"Error sending scheduled email: {e}")
 
         return emails_sent  # Return list of sent emails
-
 
     def scheduler_loop(self):
         """Scheduler loop that ensures each email is sent only once."""
@@ -487,18 +480,16 @@ class EmailAutomationTool:
                 self.logger.error(f"Error in scheduler loop: {e}")
                 time.sleep(10)  # Avoid infinite retry loops
 
-
     def ensure_scheduler_running(self):
-            """Ensure the scheduler thread is running"""
-            if not self.scheduler_running or (self.scheduler_thread and not self.scheduler_thread.is_alive()):
-                # Update local copy from session state
-                self.scheduled_emails_local = list(st.session_state.scheduled_emails)
-                
-                self.scheduler_running = True
-                self.scheduler_thread = threading.Thread(target=self.scheduler_loop, daemon=True)
-                self.scheduler_thread.start()
-                self.logger.info("Started email scheduler thread")
-
+        """Ensure the scheduler thread is running"""
+        if not self.scheduler_running or (self.scheduler_thread and not self.scheduler_thread.is_alive()):
+            # Update local copy from session state
+            self.scheduled_emails_local = list(st.session_state.scheduled_emails)
+            
+            self.scheduler_running = True
+            self.scheduler_thread = threading.Thread(target=self.scheduler_loop, daemon=True)
+            self.scheduler_thread.start()
+            self.logger.info("Started email scheduler thread")
 
     def normalize_dataframe(self, df):
         """Normalize column names in the dataframe to support various formats"""
@@ -525,7 +516,6 @@ class EmailAutomationTool:
                 normalized_df.rename(columns={col: column_map[lower_col]}, inplace=True)
                 
         return normalized_df
-
 
     def send_bulk_emails(self, email_sender, password, recipients, subject=None, body=None, attachment=None):
         """Send bulk emails with attachment handling, error logging, and batch management."""
@@ -599,6 +589,7 @@ class EmailAutomationTool:
 
                             # Attach file only if it exists
                             if current_attachment:
+                                print(f"✅ Attaching file: {current_attachment}")  # Debug
                                 with open(current_attachment, "rb") as f:
                                     attachment_part = MIMEApplication(f.read(), Name=os.path.basename(current_attachment))
                                     attachment_part["Content-Disposition"] = f'attachment; filename="{os.path.basename(current_attachment)}"'
@@ -626,10 +617,6 @@ class EmailAutomationTool:
             self.logger.error(f"Bulk sending error: {e}")
             print(f"⚠️ Bulk sending error: {e}")
             raise Exception(f"Error sending emails: {e}")
-
-
-
-
 
     def process_from_csv(self, file_upload, selected_file_type, send_time=None, recurring=False, recurring_days=None):
         """Import and schedule emails from a CSV file."""
@@ -669,8 +656,6 @@ class EmailAutomationTool:
                 lambda pin: os.path.join(attachment_dir, f"{pin}.{selected_file_type}") 
                 if os.path.exists(os.path.join(attachment_dir, f"{pin}.{selected_file_type}")) else df["Attachment"]
             )
-
-
 
             if send_time:
                 hours, minutes = map(int, send_time.split(':'))
@@ -738,9 +723,12 @@ class EmailAutomationTool:
             st.error(f"Error processing file: {e}")
             return False
 
-
     def main_interface(self):
         """Main Streamlit interface"""
+        # Ensure the saved_attachments directory exists
+        save_dir = "saved_attachments"
+        os.makedirs(save_dir, exist_ok=True)  # Create directory if it doesn't exist
+
         st.title("Email Automation Tool")
 
         # Ensure session state variables are initialized
@@ -813,7 +801,6 @@ class EmailAutomationTool:
                     self.clear_scheduled_emails()
                     st.rerun()
 
-
         # Requirements info
         with st.expander("File Requirements", expanded=False):
             st.markdown("""
@@ -827,7 +814,6 @@ class EmailAutomationTool:
               - **ScheduleTime** - scheduling time for each email (format: HH:MM)
               - **PIN column** - used for PIN-based attachment mapping
               - **Attachment** - used for attaching files it must be same (Attachment)
-
 
             ### PIN-based Attachment Mapping
             - The system looks for a column containing "pin" in its name
@@ -872,18 +858,17 @@ class EmailAutomationTool:
             subject = st.text_input("Enter Email Subject", value="", placeholder="(Optional)")
             body = st.text_area("Email Body", key="email_body")
 
-
         else:  # Bulk Email
             bulk_upload_file = st.file_uploader("Upload Bulk Email Data", type=['csv', 'xlsx', 'xls', 'txt'], key="file_uploader_bulk")
 
             if bulk_upload_file:
                 try:
-                    recipients = self.read_data_file(bulk_upload_file, selected_file_type)  # ✅ Updated to pass file type
+                    recipients = self.read_data_file(bulk_upload_file, selected_file_type)  # Updated to pass file type
 
                     if recipients is not None:
                         recipients = self.normalize_dataframe(recipients)
 
-                        # ✅ Auto-assign attachments based on PINs if file type is selected
+                        # Auto-assign attachments based on PINs if file type is selected
                         if 'Attachment' not in recipients.columns:  # Check if attachment column exists
                             if 'pin' in recipients.columns and selected_file_type != "None":
                                 recipients["Attachment"] = recipients["pin"].apply(
@@ -898,7 +883,6 @@ class EmailAutomationTool:
                             st.error("File must contain a column named 'Email', 'email', 'recipient', or similar")
                             return
 
-
                         # Check if Subject/Body columns exist
                         csv_has_subject = 'Subject' in recipients.columns
                         csv_has_body = 'Body' in recipients.columns
@@ -910,7 +894,7 @@ class EmailAutomationTool:
 
                         # Preview data
                         st.subheader("CSV Preview with Attachments")
-                        st.dataframe(recipients.head())  # ✅ Updated preview with attachment column
+                        st.dataframe(recipients.head())  # Updated preview with attachment column
 
                         # Show email validation summary
                         st.info(f"Found {valid_count} valid email(s) and {invalid_count} invalid email(s)")
@@ -925,7 +909,6 @@ class EmailAutomationTool:
                 except Exception as e:
                     st.error(f"Error reading file: {e}")
                     return
-
 
             # Subject and Body inputs for bulk emails (only if not in CSV)
             if not csv_has_subject:
@@ -942,6 +925,23 @@ class EmailAutomationTool:
 
         # Attachment Option
         attachment = st.file_uploader("Attachment (optional)", type=['pdf', 'docx', 'xlsx', 'txt', 'jpg', 'png'])
+
+        # Save the uploaded file to the saved_attachments directory
+        attachment_path = None
+        if attachment:
+            save_dir = "saved_attachments"
+            os.makedirs(save_dir, exist_ok=True)  # Ensure directory exists
+            saved_path = os.path.join(save_dir, attachment.name)
+
+            with open(saved_path, "wb") as f:
+                f.write(attachment.getbuffer())  # Save the uploaded file
+
+            attachment_path = saved_path  # Use the saved file path
+            st.success(f"File saved to: {saved_path}")
+            print(f"✅ File saved to: {saved_path}")  # Debug
+        else:
+            st.write("No file uploaded.")
+            print("⚠️ No file uploaded.")  # Debug
 
         # Scheduling options if Schedule Email selected
         if send_type == "Schedule Email":
@@ -985,53 +985,42 @@ class EmailAutomationTool:
                 return
 
             # Validate subject and body
-            # Allow empty subject and body if not present in CSV or interface
             if not csv_has_subject:
                 subject = subject if subject is not None else ""  # Allow empty subject
-
             if not csv_has_body:
                 body = body if body is not None else ""  # Allow empty body
-
 
             try:
                 if send_type == "Send Immediately":
                     if mode == "Single Email":
-                        # ✅ Ensure attachment is correctly handled
                         recipients_df = pd.DataFrame({
                             'Email': [recipients], 
                             'Subject': [subject], 
                             'Body': [body], 
-                            'Attachment': [attachment.name if attachment else None]
+                            'Attachment': [attachment_path]  # Use the saved file path
                         })
-
-                        # ✅ Validate attachment paths
-                        recipients_df["Attachment"] = recipients_df["Attachment"].apply(lambda x: x if x and os.path.exists(x) else None)
 
                         result = self.send_bulk_emails(
                             email_sender,
                             password,
-                            recipients_df,  # ✅ Convert single email to DataFrame format
+                            recipients_df,
                             subject,
                             body,
-                            recipients_df["Attachment"].iloc[0]  # ✅ Ensure valid attachment is passed
+                            attachment_path  # Pass the saved file path
                         )
-
                     else:
                         # Bulk email sending
-                        recipients["Attachment"] = recipients["Attachment"].apply(lambda x: x if x and os.path.exists(x) else None)
-
+                        recipients["Attachment"] = attachment_path  # Add the saved file path to the DataFrame
                         result = self.send_bulk_emails(
                             email_sender,
                             password,
                             recipients,
                             subject,
                             body,
-                            None  # ✅ Attachments are handled inside send_bulk_emails()
+                            attachment_path  # Pass the saved file path
                         )
 
                     st.success(result)
-
-
 
                     # Add to sent emails history
                     sent_email = {
@@ -1072,7 +1061,7 @@ class EmailAutomationTool:
                         subject,
                         body,
                         schedule_datetime,
-                        attachment,
+                        attachment_path,  # Pass the saved file path
                         recurring,
                         recurring_days
                     )
